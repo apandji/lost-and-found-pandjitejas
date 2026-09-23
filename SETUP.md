@@ -1,7 +1,7 @@
 # Setup
 
-The shared student walk is September 23, 2026: `54278a147abb3ad1`.
-Its route and photo credits are in Git at `public/routes/54278a147abb3ad1.json`.
+Two example routes are in Git: a path-only September 22 walk (`4432175ada5c8dac`) and the September 23 photo walk (`54278a147abb3ad1`).
+The Sep 23 route and photo credits are at `public/routes/54278a147abb3ad1.json`.
 Other walks and all generated image files are local assets, not part of the student checkout.
 
 Install [Bun](https://bun.sh/) and [ImageMagick](https://imagemagick.org/) first. Then:
