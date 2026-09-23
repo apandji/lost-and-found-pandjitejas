@@ -11,25 +11,44 @@ const { walk } = Astro.props as { walk: Walk };
 
 <Base title={`${walk.date} — lost + found`}>
   <main class={walk.photos.length ? "walk-detail has-photos" : "walk-detail"}>
-    <p class="walk-info">
-      <time datetime={walk.date}>{new Date(walk.date).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: "UTC" })}</time>
-      <span>{walk.duration}</span>
-      <span>{walk.photos.length} {walk.photos.length === 1 ? "photo" : "photos"}</span>
-    </p>
-    <svg class="route" viewBox="0 0 600 400" role="img" aria-label={`Walk on ${walk.date}`}>
-      <path d={walk.path} fill="none" stroke="black" stroke-width="2.2" vector-effect="non-scaling-stroke" stroke-linecap="round" stroke-linejoin="round" />
-      {walk.photos.map((photo, index) => photo.marker && (
-        <a href={`#photo-${index}`} data-photo-index={index} aria-label={`Photo ${index + 1}`}>
-          <circle cx={photo.marker[0]} cy={photo.marker[1]} r="5.5" fill="#f6d94c" stroke="black" stroke-width="1.5" />
-        </a>
-      ))}
-    </svg>
+    <div class="walk-side">
+      <div class="walk-sticky">
+        <p class="walk-info">
+          <time datetime={walk.date}>{new Date(walk.date).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: "UTC" })}</time>
+          <span>{walk.duration}</span>
+          <span>{walk.photos.length} {walk.photos.length === 1 ? "photo" : "photos"}</span>
+        </p>
+        <svg class="route" viewBox="0 0 600 400" role="img" aria-label={`Walk on ${walk.date}`}>
+          <path d={walk.path} fill="none" stroke="black" stroke-width="2.2" vector-effect="non-scaling-stroke" stroke-linecap="round" stroke-linejoin="round" />
+          {walk.photos.map((photo, index) => photo.marker && (
+            <a href={`#photo-${index}`} data-photo-index={index} aria-label={`Photo ${index + 1}`}>
+              <circle cx={photo.marker[0]} cy={photo.marker[1]} r="5.5" fill="#f6d94c" stroke="black" stroke-width="1.5" />
+            </a>
+          ))}
+        </svg>
+      </div>
+      {walk.standings.length > 0 && (
+        <ol class="standings">
+          {walk.standings.map((row) => (
+            <li class={`prompt-${row.colorKey}`}>
+              <a href={`#photo-${row.bestPhotoIndex}`}>{row.by}</a>
+              <span>{row.average}%</span>
+            </li>
+          ))}
+        </ol>
+      )}
+    </div>
     {walk.photos.length > 0 && (
       <div class="photos">
         {walk.photos.map((photo, index) => (
           <figure id={`photo-${index}`}>
             <a href={photo.src} data-lightbox data-marker={photo.marker?.join(",")}><img src={photo.thumbnailSrc} width="360" height="480" alt={photo.by ? `Photo by ${photo.by}` : `Walk photo ${index + 1}`} loading="lazy" decoding="async" /></a>
-            {photo.by && <figcaption>{photo.by}</figcaption>}
+            {(photo.by || photo.colorPct !== null) && (
+              <figcaption class={photo.colorKey ? `prompt-${photo.colorKey}` : undefined}>
+                {photo.by}
+                {photo.color && photo.colorPct !== null && <span class="photo-score">{photo.colorPct}% {photo.color}</span>}
+              </figcaption>
+            )}
           </figure>
         ))}
       </div>
