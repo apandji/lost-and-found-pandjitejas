@@ -21,7 +21,7 @@ a { color: inherit; }
 .route { position: sticky; top: 16px; align-self: start; display: block; width: 100%; max-width: 600px; height: auto; border-radius: 12px; background: #f2f2f2; }
 .route circle { transform-box: fill-box; transform-origin: center; transition: transform 150ms ease-out; }
 .route a:hover circle, .route a:focus-visible circle, .route a.active circle { transform: scale(1.6); }
-.photos { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; align-content: start; }
+.photos { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 16px; align-content: start; }
 .photos figure { margin: 0; }
 .photos figure:target { outline: 2px solid #f6d94c; outline-offset: 4px; }
 .photos img { display: block; width: 100%; height: auto; }
