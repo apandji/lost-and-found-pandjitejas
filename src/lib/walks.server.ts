@@ -11,6 +11,7 @@ export interface WalkPhoto {
 export interface Walk {
   id: string;
   date: string;
+  startedAt: number;
   duration: string;
   thumbnailPath: string;
   path: string;
@@ -51,7 +52,7 @@ export async function loadWalks(): Promise<Walk[]> {
       by: photo.by ?? null,
       marker: markerAtTime(data.timeline, photo.timeSeconds),
     }));
-    return { id, date: data.date, duration, thumbnailPath: data.thumbnailPath, path: data.path, photos };
+    return { id, date: data.date, startedAt: data.timeline[0][0], duration, thumbnailPath: data.thumbnailPath, path: data.path, photos };
   }));
-  return walks.sort((a, b) => b.date.localeCompare(a.date));
+  return walks.sort((a, b) => b.startedAt - a.startedAt);
 }
