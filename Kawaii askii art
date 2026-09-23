@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kawaii Hello World! 💕</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Canvas Confetti -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@300..700&family=VT323&family=Quicksand:wght@500;700&display=swap" rel="stylesheet">
+    
+    <style>
+        body {
+            font-family: 'Fredoka', sans-serif;
+            background: linear-gradient(135deg, #ffd1dc 0%, #ffe4e1 35%, #e0f7fa 70%, #f3e5f5 100%);
+            background-size: 400% 400%;
+            animation: gradientBG 15s ease infinite;
+        }
+
+        @keyframes gradientBG {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .ascii-art {
+            font-family: 'VT323', monospace;
+            line-height: 1.1;
+            letter-spacing: 0px;
+            white-space: pre;
+            text-shadow: 0 0 10px rgba(255, 182, 193, 0.8), 0 0 20px rgba(255, 105, 180, 0.4);
+            user-select: none;
+            transition: all 0.3s ease;
+        }
+
+        .ascii-art:hover {
+            transform: scale(1.05);
+            filter: drop-shadow(0 0 15px rgba(255, 105, 180, 0.6));
+        }
+
+        .sparkle-btn {
+            box-shadow: 0 8px 20px rgba(255, 182, 193, 0.5);
+            transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .sparkle-btn:hover {
+            transform: translateY(-3px) scale(1.03);
+            box-shadow: 0 12px 25px rgba(255, 105, 180, 0.6);
+        }
+
+        .sparkle-btn:active {
+            transform: translateY(1px) scale(0.98);
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-12px) rotate(1.5deg); }
+        }
+
+        .floating {
+            animation: float 4s ease-in-out infinite;
+        }
+
+        @keyframes pulse-glow {
+            0%, 100% { filter: drop-shadow(0 0 8px #ffb6c1); }
+            50% { filter: drop-shadow(0 0 20px #ff69b4); }
+        }
+
+        .glow {
+            animation: pulse-glow 3s infinite;
+        }
+
+        /* Floating background elements */
+        .bg-bubble {
+            position: absolute;
+            border-radius: 50%;
+            opacity: 0.4;
+            pointer-events: none;
+            animation: floatBubble 10s infinite linear;
+        }
+
+        @keyframes floatBubble {
+            0% { transform: translateY(100vh) rotate(0deg); opacity: 0; }
+            20% { opacity: 0.5; }
+            80% { opacity: 0.5; }
+            100% { transform: translateY(-100px) rotate(360deg); opacity: 0; }
+        }
+    </style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-4 relative overflow-x-hidden">
+
+    <!-- Background Bubbles Container -->
+    <div id="bubbles" class="fixed inset-0 pointer-events-none overflow-hidden z-0"></div>
+
+    <main class="relative z-10 max-w-xl w-full bg-white/70 backdrop-blur-md rounded-3xl p-6 md:p-10 shadow-2xl border border-white/60 text-center flex flex-col items-center">
+        
+        <!-- Header Tag -->
+        <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-pink-100/80 border border-pink-200 text-pink-500 font-semibold text-sm mb-4 shadow-sm">
+            <span>✨</span> Welcome to my cute space! <span>✨</span>
+        </div>
+
+        <!-- Main Title -->
+        <h1 class="text-4xl md:text-5xl font-extrabold text-pink-500 tracking-wide mb-2 floating drop-shadow-sm">
+            Hello World! 💕
+        </h1>
+        <p class="text-purple-400 font-medium text-sm md:text-base mb-6">
+            (◕‿◕✿) Click on me or press buttons for magic! (⁠ฅ⁠•⁠a⁠•⁠ฅ⁠)
+        </p>
+
+        <!-- Character Selector Tabs -->
+        <div class="flex flex-wrap justify-center gap-2 mb-6 bg-pink-50/80 p-2 rounded-2xl border border-pink-100 shadow-inner">
+            <button onclick="selectCharacter('bunny')" id="btn-bunny" class="char-tab px-3 py-1.5 rounded-xl font-bold text-xs md:text-sm transition-all bg-pink-400 text-white shadow-sm">
+                🐰 Bunny
+            </button>
+            <button onclick="selectCharacter('cat')" id="btn-cat" class="char-tab px-3 py-1.5 rounded-xl font-bold text-xs md:text-sm text-pink-400 hover:bg-pink-200/50 transition-all">
+                🐱 Cat
+            </button>
+            <button onclick="selectCharacter('bear')" id="btn-bear" class="char-tab px-3 py-1.5 rounded-xl font-bold text-xs md:text-sm text-pink-400 hover:bg-pink-200/50 transition-all">
+                🐻 Bear
+            </button>
+            <button onclick="selectCharacter('chick')" id="btn-chick" class="char-tab px-3 py-1.5 rounded-xl font-bold text-xs md:text-sm text-pink-400 hover:bg-pink-200/50 transition-all">
+                🐥 Chick
+            </button>
+        </div>
+
+        <!-- ASCII Art Display Screen -->
+        <div class="w-full bg-slate-900/90 rounded-2xl p-6 shadow-inner border-2 border-pink-200/50 mb-6 cursor-pointer relative group overflow-hidden" 
+             onclick="triggerHeartBurst(event)">
+            
+            <!-- Floating hint badge -->
+            <div class="absolute top-2 right-3 text-[10px] bg-pink-500/20 text-pink-300 border border-pink-500/30 px-2 py-0.5 rounded-full opacity-70 group-hover:opacity-100 transition-opacity">
+                Click me! 💖
+            </div>
+
+            <!-- ASCII Text Output -->
+            <div id="asciiDisplay" class="ascii-art text-pink-300 text-sm sm:text-base md:text-lg flex justify-center items-center my-2 min-h-[160px]">
+                <!-- Art injected via JavaScript -->
+            </div>
+        </div>
+
+        <!-- Dynamic Speech Bubble -->
+        <div id="speechBubble" class="bg-white px-5 py-2.5 rounded-2xl shadow-md border border-pink-100 text-pink-600 font-bold text-sm md:text-base mb-6 relative animate-bounce">
+            <span id="speechText">"Hello, sweet friend! (◕‿◕✿)"</span>
+        </div>
+
+        <!-- Interactive Action Buttons -->
+        <div class="flex flex-wrap justify-center gap-3 w-full">
+            <button onclick="triggerConfetti()" class="sparkle-btn flex-1 min-w-[140px] bg-gradient-to-r from-pink-400 to-rose-400 hover:from-pink-500 hover:to-rose-500 text-white font-bold py-3 px-4 rounded-2xl flex items-center justify-center gap-2">
+                <span>🎉</span> Confetti!
+            </button>
+
+            <button onclick="playCuteSound()" class="sparkle-btn flex-1 min-w-[140px] bg-gradient-to-r from-purple-400 to-pink-400 hover:from-purple-500 hover:to-pink-500 text-white font-bold py-3 px-4 rounded-2xl flex items-center justify-center gap-2">
+                <span>🎶</span> Sparkle Sound
+            </button>
+
+            <button onclick="changeQuote()" class="sparkle-btn bg-white hover:bg-pink-50 text-pink-500 border-2 border-pink-200 font-bold py-3 px-4 rounded-2xl flex items-center justify-center">
+                <span>💬</span> Say Something!
+            </button>
+        </div>
+
+        <!-- Footer Note -->
+        <footer class="mt-8 text-xs text-pink-400/80 font-medium flex items-center gap-1">
+            Made with 💖 for a cute day • <span>(⁠ฅ⁠•⁠ω⁠•⁠ฅ⁠)</span>
+        </footer>
+    </main>
+
+    <script>
+        // ASCII Characters Data
+        const characters = {
+            bunny: {
+                art: `
+  /\\_/\\  
+ ( o.o ) 
+ > ^ <   
+ (") (") 
+`,
+                speech: [
+                    "Hello, sweet friend! (◕‿◕✿)",
+                    "Hop hop hop! Have a cute day! 🥕",
+                    "You are doing amazing today! (⁠ฅ⁠•⁠a⁠•⁠ฅ⁠)",
+                    "Sending you soft warm hugs! 🌸"
+                ]
+            },
+            cat: {
+                art: `
+ /\\___/\\ 
+(  o.o  )
+ >  ^  < 
+ (  "  ) 
+`,
+                speech: [
+                    "Meow! Hello World! 🐱",
+                    "Purr... you are wonderful! ✨",
+                    "Nyan~ (⁠ฅ⁠^⁠•⁠ﻌ⁠•⁠^⁠ฅ⁠)",
+                    "Don't forget to take cozy breaks! ☕"
+                ]
+            },
+            bear: {
+                art: `
+ /\\__/\\ 
+(  ='.= )
+ (  "  ) 
+ /     \\ 
+`,
+                speech: [
+                    "Warm bear hug for you! 🐻",
+                    "Hello world! Stay cozy! 🍯",
+                    "ʕ•ᴥ•ʔ You are berry special!",
+                    "Sending sweet vibes your way! 🍓"
+                ]
+            },
+            chick: {
+                art: `
+  ( •_•) 
+ (  >🐥>
+  /   \\ 
+`,
+                speech: [
+                    "Cheep cheep! Hello! 🐥",
+                    "Small steps every day! 🌻",
+                    "(⁠•⁠ө⁠•⁠)✨ You shine so bright!",
+                    "Peck peck! Have a happy day!"
+                ]
+            }
+        };
+
+        let currentCharacter = 'bunny';
+
+        // Initialize Audio Context for Web Audio API Sound Generation
+        let audioCtx = null;
+
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+        }
+
+        // Play Cute Musical Chime / Sparkle Sound
+        function playCuteSound() {
+            initAudio();
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+
+            const now = audioCtx.currentTime;
+            // Pentatonic scale notes for extra cute sparkle
+            const notes = [523.25, 659.25, 783.99, 1046.50, 1318.51]; 
+            
+            notes.forEach((freq, index) => {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(freq, now + index * 0.08);
+
+                gain.gain.setValueAtTime(0.15, now + index * 0.08);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + index * 0.08 + 0.3);
+
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+
+                osc.start(now + index * 0.08);
+                osc.stop(now + index * 0.08 + 0.3);
+            });
+        }
+
+        // Render Character
+        function selectCharacter(charKey) {
+            currentCharacter = charKey;
+            
+            // Update active button styles
+            document.querySelectorAll('.char-tab').forEach(btn => {
+                btn.classList.remove('bg-pink-400', 'text-white', 'shadow-sm');
+                btn.classList.add('text-pink-400', 'hover:bg-pink-200/50');
+            });
+            const activeBtn = document.getElementById(`btn-${charKey}`);
+            if (activeBtn) {
+                activeBtn.classList.add('bg-pink-400', 'text-white', 'shadow-sm');
+                activeBtn.classList.remove('text-pink-400', 'hover:bg-pink-200/50');
+            }
+
+            // Update ASCII display
+            const display = document.getElementById('asciiDisplay');
+            display.textContent = characters[charKey].art;
+
+            // Update quote
+            changeQuote(0);
+        }
+
+        // Change Speech Quote
+        function changeQuote(index = null) {
+            const quotes = characters[currentCharacter].speech;
+            const newQuote = index !== null ? quotes[index] : quotes[Math.floor(Math.random() * quotes.length)];
+            
+            const speechText = document.getElementById('speechText');
+            const speechBubble = document.getElementById('speechBubble');
+
+            // Quick bounce reset animation
+            speechBubble.classList.remove('animate-bounce');
+            void speechBubble.offsetWidth; // trigger reflow
+            speechBubble.classList.add('animate-bounce');
+
+            speechText.textContent = `"${newQuote}"`;
+        }
+
+        // Trigger Confetti Celebration
+        function triggerConfetti() {
+            playCuteSound();
+            confetti({
+                particleCount: 70,
+                spread: 60,
+                origin: { y: 0.7 },
+                colors: ['#ffb6c1', '#ff69b4', '#e0f7fa', '#fff0f5', '#dda0dd']
+            });
+        }
+
+        // Trigger Heart Burst on ASCII Click
+        function triggerHeartBurst(event) {
+            playCuteSound();
+            
+            // Hearts Confetti Burst
+            confetti({
+                particleCount: 25,
+                scalar: 1.2,
+                shapes: ['circle'],
+                colors: ['#ff69b4', '#ff1493', '#ffb6c1'],
+                origin: {
+                    x: event.clientX / window.innerWidth,
+                    y: event.clientY / window.innerHeight
+                }
+            });
+
+            // Randomize quote
+            changeQuote();
+        }
+
+        // Generate Floating Background Bubbles
+        function createBackgroundBubbles() {
+            const container = document.getElementById('bubbles');
+            const colors = ['#ffb6c1', '#ffe4e1', '#e0f7fa', '#f3e5f5'];
+            
+            for (let i = 0; i < 15; i++) {
+                const bubble = document.createElement('div');
+                bubble.className = 'bg-bubble';
+                
+                const size = Math.random() * 40 + 15;
+                bubble.style.width = `${size}px`;
+                bubble.style.height = `${size}px`;
+                bubble.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                bubble.style.left = `${Math.random() * 100}%`;
+                bubble.style.animationDuration = `${Math.random() * 8 + 8}s`;
+                bubble.style.animationDelay = `${Math.random() * 5}s`;
+                
+                container.appendChild(bubble);
+            }
+        }
+
+        // Initialize App
+        window.onload = function() {
+            selectCharacter('bunny');
+            createBackgroundBubbles();
+        };
+    </script>
+</body>
+</html>
