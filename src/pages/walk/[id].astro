@@ -9,7 +9,7 @@ export async function getStaticPaths() {
 const { walk } = Astro.props as { walk: Walk };
 ---
 
-<Base title={`${walk.date} — lost + found`} back>
+<Base title={`${walk.date} — lost + found`}>
   <main class={walk.photos.length ? "walk-detail has-photos" : "walk-detail"}>
     <p class="walk-info">
       <time datetime={walk.date}>{new Date(walk.date).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: "UTC" })}</time>

@@ -3,10 +3,9 @@ import "../styles/global.css";
 
 interface Props {
   title: string;
-  back?: boolean;
 }
 
-const { title, back = false } = Astro.props;
+const { title } = Astro.props;
 ---
 
 <!doctype html>
@@ -18,7 +17,7 @@ const { title, back = false } = Astro.props;
     <title>{title}</title>
   </head>
   <body>
-    <header><h1><a href="/">{back ? "← lost + found" : "lost + found"}</a></h1></header>
+    <header><h1><a href="/">lost + found</a></h1></header>
     <slot />
   </body>
 </html>
