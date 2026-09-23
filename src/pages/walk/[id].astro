@@ -28,7 +28,7 @@ const { walk } = Astro.props as { walk: Walk };
       <div class="photos">
         {walk.photos.map((photo, index) => (
           <figure id={`photo-${index}`}>
-            <a href={photo.src} data-lightbox data-marker={photo.marker?.join(",")}><img src={photo.src} width="320" alt={photo.by ? `Photo by ${photo.by}` : `Walk photo ${index + 1}`} loading="lazy" /></a>
+            <a href={photo.src} data-lightbox data-marker={photo.marker?.join(",")}><img src={photo.thumbnailSrc} width="360" height="480" alt={photo.by ? `Photo by ${photo.by}` : `Walk photo ${index + 1}`} loading="lazy" decoding="async" /></a>
             {photo.by && <figcaption>{photo.by}</figcaption>}
           </figure>
         ))}
@@ -66,8 +66,12 @@ const { walk } = Astro.props as { walk: Walk };
     function showPhoto(next: number) {
       index = (next + links.length) % links.length;
       const link = links[index];
-      full.src = link.href;
-      full.alt = link.querySelector("img")!.alt;
+      const thumbnail = link.querySelector("img")!;
+      full.src = thumbnail.src;
+      full.alt = thumbnail.alt;
+      const original = new Image();
+      original.onload = () => { if (links[index] === link) full.src = original.src; };
+      original.src = link.href;
       const point = link.dataset.marker?.split(",");
       marker.style.display = point ? "" : "none";
       if (point) {

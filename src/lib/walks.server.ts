@@ -4,6 +4,7 @@ import { join } from "node:path";
 
 export interface WalkPhoto {
   src: string;
+  thumbnailSrc: string;
   by: string | null;
   marker: [number, number] | null;
 }
@@ -47,11 +48,16 @@ export async function loadWalks(): Promise<Walk[]> {
     if (!data.path || !data.thumbnailPath || !data.timeline.length) throw new Error(`Invalid walk: ${id}`);
     const minutes = Math.round((data.timeline.at(-1)![0] - data.timeline[0][0]) / 60);
     const duration = `${minutes >= 60 ? `${Math.floor(minutes / 60)}h ` : ""}${minutes % 60}m`;
-    const photos = data.photos.filter((photo) => existsSync(join(process.cwd(), "public", "walks", id, "photos", photo.file))).sort((a, b) => (a.timeSeconds ?? Infinity) - (b.timeSeconds ?? Infinity)).map((photo): WalkPhoto => ({
-      src: `/walks/${id}/photos/${encodeURIComponent(photo.file)}`,
-      by: photo.by ?? null,
-      marker: markerAtTime(data.timeline, photo.timeSeconds),
-    }));
+    const photos = data.photos.filter((photo) => existsSync(join(process.cwd(), "public", "walks", id, "photos", photo.file))).sort((a, b) => (a.timeSeconds ?? Infinity) - (b.timeSeconds ?? Infinity)).map((photo): WalkPhoto => {
+      const src = `/walks/${id}/photos/${encodeURIComponent(photo.file)}`;
+      const thumbnailSrc = `/walks/${id}/thumbs/${encodeURIComponent(photo.file)}`;
+      return {
+        src,
+        thumbnailSrc: existsSync(join(process.cwd(), "public", "walks", id, "thumbs", photo.file)) ? thumbnailSrc : src,
+        by: photo.by ?? null,
+        marker: markerAtTime(data.timeline, photo.timeSeconds),
+      };
+    });
     return { id, date: data.date, startedAt: data.timeline[0][0], duration, thumbnailPath: data.thumbnailPath, path: data.path, photos };
   }));
   return walks.sort((a, b) => b.startedAt - a.startedAt);
