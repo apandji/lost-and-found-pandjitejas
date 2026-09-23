@@ -17,7 +17,7 @@ const walks = await loadWalks();
                 <span>{String(index + 1).padStart(2, "0")}</span>
               </span>
               <svg viewBox="0 0 64 64" aria-hidden="true">
-                <path d={walk.thumbnailPath} fill="none" stroke="black" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round" />
+                <path d={walk.thumbnailPath} fill="none" stroke="black" stroke-width="2.2" vector-effect="non-scaling-stroke" stroke-linecap="round" stroke-linejoin="round" />
               </svg>
               <span class="walk-duration">{walk.duration}</span>
             </a>

@@ -11,8 +11,13 @@ const { walk } = Astro.props as { walk: Walk };
 
 <Base title={`${walk.date} — lost + found`} back>
   <main class={walk.photos.length ? "walk-detail has-photos" : "walk-detail"}>
+    <p class="walk-info">
+      <time datetime={walk.date}>{new Date(walk.date).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: "UTC" })}</time>
+      <span>{walk.duration}</span>
+      <span>{walk.photos.length} {walk.photos.length === 1 ? "photo" : "photos"}</span>
+    </p>
     <svg class="route" viewBox="0 0 600 400" role="img" aria-label={`Walk on ${walk.date}`}>
-      <path d={walk.path} fill="none" stroke="black" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
+      <path d={walk.path} fill="none" stroke="black" stroke-width="2.2" vector-effect="non-scaling-stroke" stroke-linecap="round" stroke-linejoin="round" />
       {walk.photos.map((photo, index) => photo.marker && (
         <a href={`#photo-${index}`} aria-label={`Photo ${index + 1}`}>
           <circle cx={photo.marker[0]} cy={photo.marker[1]} r="5.5" fill="#f6d94c" stroke="black" stroke-width="1.5" />
@@ -39,7 +44,7 @@ const { walk } = Astro.props as { walk: Walk };
         <img alt="" />
         <div class="lightbox-route">
           <svg viewBox="0 0 600 400" role="img" aria-label="Photo location on path">
-            <path d={walk.path} fill="none" stroke="black" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
+            <path d={walk.path} fill="none" stroke="black" stroke-width="2.2" vector-effect="non-scaling-stroke" stroke-linecap="round" stroke-linejoin="round" />
             <circle r="10" fill="#f6d94c" stroke="black" stroke-width="3" />
           </svg>
         </div>
