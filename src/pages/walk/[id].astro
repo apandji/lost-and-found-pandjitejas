@@ -1,0 +1,111 @@
+---
+import Base from "../../layouts/Base.astro";
+import { loadWalks, type Walk } from "../../lib/walks.server";
+
+export async function getStaticPaths() {
+  return (await loadWalks()).map((walk) => ({ params: { id: walk.id }, props: { walk } }));
+}
+
+const { walk } = Astro.props as { walk: Walk };
+---
+
+<Base title={`${walk.date} — lost + found`}>
+  <main class={walk.photos.length ? "walk-detail has-photos" : "walk-detail"}>
+    <p class="walk-info">
+      <time datetime={walk.date}>{new Date(walk.date).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: "UTC" })}</time>
+      <span>{walk.duration}</span>
+      <span>{walk.photos.length} {walk.photos.length === 1 ? "photo" : "photos"}</span>
+    </p>
+    <svg class="route" viewBox="0 0 600 400" role="img" aria-label={`Walk on ${walk.date}`}>
+      <path d={walk.path} fill="none" stroke="black" stroke-width="2.2" vector-effect="non-scaling-stroke" stroke-linecap="round" stroke-linejoin="round" />
+      {walk.photos.map((photo, index) => photo.marker && (
+        <a href={`#photo-${index}`} data-photo-index={index} aria-label={`Photo ${index + 1}`}>
+          <circle cx={photo.marker[0]} cy={photo.marker[1]} r="5.5" fill="#f6d94c" stroke="black" stroke-width="1.5" />
+        </a>
+      ))}
+    </svg>
+    {walk.photos.length > 0 && (
+      <div class="photos">
+        {walk.photos.map((photo, index) => (
+          <figure id={`photo-${index}`}>
+            <a href={photo.src} data-lightbox data-marker={photo.marker?.join(",")}><img src={photo.thumbnailSrc} width="360" height="480" alt={photo.by ? `Photo by ${photo.by}` : `Walk photo ${index + 1}`} loading="lazy" decoding="async" /></a>
+            {photo.by && <figcaption>{photo.by}</figcaption>}
+          </figure>
+        ))}
+      </div>
+    )}
+  </main>
+  {walk.photos.length > 0 && (
+    <dialog class="lightbox" aria-label="Photo viewer">
+      <button class="lightbox-close" type="button" aria-label="Close photo">×</button>
+      <button class="lightbox-toggle" type="button" aria-pressed="true">path</button>
+      <button class="lightbox-prev" type="button" aria-label="Previous photo">‹</button>
+      <div class="lightbox-photo">
+        <img alt="" />
+        <div class="lightbox-route">
+          <svg viewBox="0 0 600 400" role="img" aria-label="Photo location on path">
+            <path d={walk.path} fill="none" stroke="white" stroke-width="3" vector-effect="non-scaling-stroke" stroke-linecap="round" stroke-linejoin="round" />
+            <circle r="7" fill="#f6d94c" stroke="black" stroke-width="2" />
+          </svg>
+        </div>
+      </div>
+      <button class="lightbox-next" type="button" aria-label="Next photo">›</button>
+    </dialog>
+  )}
+</Base>
+
+<script>
+  const viewer = document.querySelector<HTMLDialogElement>(".lightbox");
+  if (viewer) {
+    const links = [...document.querySelectorAll<HTMLAnchorElement>("[data-lightbox]")];
+    const full = viewer.querySelector(".lightbox-photo img") as HTMLImageElement;
+    const route = viewer.querySelector(".lightbox-route") as HTMLDivElement;
+    const marker = route.querySelector("circle")!;
+    let index = 0;
+
+    function showPhoto(next: number) {
+      index = (next + links.length) % links.length;
+      const link = links[index];
+      const thumbnail = link.querySelector("img")!;
+      full.src = thumbnail.src;
+      full.alt = thumbnail.alt;
+      const original = new Image();
+      original.onload = () => { if (links[index] === link) full.src = original.src; };
+      original.src = link.href;
+      const point = link.dataset.marker?.split(",");
+      marker.style.display = point ? "" : "none";
+      if (point) {
+        marker.setAttribute("cx", point[0]);
+        marker.setAttribute("cy", point[1]);
+      }
+    }
+
+    viewer.querySelector(".lightbox-close")!.addEventListener("click", () => viewer.close());
+    viewer.querySelector(".lightbox-prev")!.addEventListener("click", () => showPhoto(index - 1));
+    viewer.querySelector(".lightbox-next")!.addEventListener("click", () => showPhoto(index + 1));
+    const toggle = viewer.querySelector(".lightbox-toggle")!;
+    toggle.addEventListener("click", () => {
+      route.hidden = !route.hidden;
+      toggle.setAttribute("aria-pressed", String(!route.hidden));
+    });
+    viewer.addEventListener("click", (event) => {
+      if (event.target === viewer) viewer.close();
+    });
+    viewer.addEventListener("keydown", (event) => {
+      if (event.key === "ArrowLeft") showPhoto(index - 1);
+      if (event.key === "ArrowRight") showPhoto(index + 1);
+    });
+    links.forEach((link, photoIndex) => {
+      const dot = document.querySelector(`.route [data-photo-index="${photoIndex}"]`);
+      link.addEventListener("pointerenter", () => dot?.classList.add("active"));
+      link.addEventListener("pointerleave", () => dot?.classList.remove("active"));
+      link.addEventListener("focus", () => dot?.classList.add("active"));
+      link.addEventListener("blur", () => dot?.classList.remove("active"));
+      link.addEventListener("click", (event) => {
+        event.preventDefault();
+        showPhoto(photoIndex);
+        viewer.showModal();
+      });
+    });
+  }
+</script>
