@@ -8,12 +8,14 @@ export interface WalkPhoto {
   by: string | null;
   marker: [number, number] | null;
   color: string | null;
+  colorKey: string | null;
   colorPct: number | null;
 }
 
 export interface WalkStanding {
   by: string;
   average: number;
+  colorKey: string;
 }
 
 export interface Walk {
@@ -57,6 +59,10 @@ function colorLabel(value: string): string {
   return value.split(/\s+/).map((part) => part.charAt(0).toUpperCase() + part.slice(1)).join(" ");
 }
 
+function colorKey(value: string): string {
+  return value.trim().toLowerCase().replace(/\s+/g, "-");
+}
+
 async function loadScores(id: string): Promise<WalkScores["photos"]> {
   const file = join(walksRoot, `${id}.scores.json`);
   if (!existsSync(file)) return {};
@@ -65,16 +71,16 @@ async function loadScores(id: string): Promise<WalkScores["photos"]> {
 }
 
 function standingsFor(photos: WalkPhoto[]): WalkStanding[] {
-  const totals = new Map<string, { sum: number; count: number }>();
+  const totals = new Map<string, { sum: number; count: number; colorKey: string }>();
   for (const photo of photos) {
-    if (!photo.by || photo.colorPct === null) continue;
-    const current = totals.get(photo.by) ?? { sum: 0, count: 0 };
+    if (!photo.by || photo.colorPct === null || !photo.colorKey) continue;
+    const current = totals.get(photo.by) ?? { sum: 0, count: 0, colorKey: photo.colorKey };
     current.sum += photo.colorPct;
     current.count += 1;
     totals.set(photo.by, current);
   }
   return [...totals.entries()]
-    .map(([by, { sum, count }]) => ({ by, average: Math.round(sum / count) }))
+    .map(([by, { sum, count, colorKey }]) => ({ by, average: Math.round(sum / count), colorKey }))
     .sort((a, b) => b.average - a.average || a.by.localeCompare(b.by));
 }
 
@@ -92,14 +98,17 @@ export async function loadWalks(): Promise<Walk[]> {
       const src = `/walks/${id}/photos/${encodeURIComponent(photo.file)}`;
       const thumbnailSrc = `/walks/${id}/thumbs/${encodeURIComponent(photo.file)}`;
       const prompt = photo.by ? prompts[photo.by] : undefined;
-      const scored = prompt?.type === "color" && scores[photo.file] !== undefined;
+      const promptColor = prompt?.type === "color" ? prompt.value : undefined;
+      const raw = promptColor !== undefined ? scores[photo.file] : undefined;
+      const scored = raw !== undefined;
       return {
         src,
         thumbnailSrc: existsSync(join(process.cwd(), "public", "walks", id, "thumbs", photo.file)) ? thumbnailSrc : src,
         by: photo.by ?? null,
         marker: markerAtTime(data.timeline, photo.timeSeconds),
-        color: scored ? colorLabel(prompt.value) : null,
-        colorPct: scored ? Math.round(scores[photo.file]) : null,
+        color: scored && promptColor ? colorLabel(promptColor) : null,
+        colorKey: scored && promptColor ? colorKey(promptColor) : null,
+        colorPct: scored ? Math.round(raw) : null,
       };
     });
     return { id, date: data.date, startedAt: data.timeline[0][0], duration, thumbnailPath: data.thumbnailPath, path: data.path, photos, standings: standingsFor(photos) };

@@ -30,7 +30,7 @@ const { walk } = Astro.props as { walk: Walk };
       {walk.standings.length > 0 && (
         <ol class="standings">
           {walk.standings.map((row) => (
-            <li>
+            <li class={`prompt-${row.colorKey}`}>
               <span>{row.by}</span>
               <span>{row.average}%</span>
             </li>
@@ -44,7 +44,7 @@ const { walk } = Astro.props as { walk: Walk };
           <figure id={`photo-${index}`}>
             <a href={photo.src} data-lightbox data-marker={photo.marker?.join(",")}><img src={photo.thumbnailSrc} width="360" height="480" alt={photo.by ? `Photo by ${photo.by}` : `Walk photo ${index + 1}`} loading="lazy" decoding="async" /></a>
             {(photo.by || photo.colorPct !== null) && (
-              <figcaption>
+              <figcaption class={photo.colorKey ? `prompt-${photo.colorKey}` : undefined}>
                 {photo.by}
                 {photo.color && photo.colorPct !== null && <span class="photo-score">{photo.colorPct}% {photo.color}</span>}
               </figcaption>
