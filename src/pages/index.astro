@@ -1,0 +1,31 @@
+---
+import Base from "../layouts/Base.astro";
+import { loadWalks } from "../lib/walks.server";
+
+const walks = await loadWalks();
+---
+
+<Base title="lost + found">
+  <main>
+    {walks.length ? (
+      <ul class="walk-list">
+        {walks.map((walk, index) => (
+          <li>
+            <a class="walk-link" href={`/walk/${walk.id}/`} aria-label={`Walk ${index + 1}, ${walk.date}, ${walk.duration}`}>
+              <span class="walk-meta">
+                <time datetime={walk.date}>{new Date(walk.date).toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" })}</time>
+                <span>{String(index + 1).padStart(2, "0")}</span>
+              </span>
+              <svg viewBox="0 0 64 64" aria-hidden="true">
+                <path d={walk.thumbnailPath} fill="none" stroke="black" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round" />
+              </svg>
+              <span class="walk-duration">{walk.duration}</span>
+            </a>
+          </li>
+        ))}
+      </ul>
+    ) : (
+      <p>No walks yet.</p>
+    )}
+  </main>
+</Base>
