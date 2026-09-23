@@ -11,7 +11,7 @@ const walks = await loadWalks();
       <ul class="walk-list">
         {walks.map((walk, index) => (
           <li>
-            <a class="walk-link" href={`/walk/${walk.id}/`} aria-label={`Walk ${index + 1}, ${walk.date}, ${walk.duration}`}>
+            <a class="walk-link" href={`/walk/${walk.id}/`} aria-label={`Walk ${index + 1}, ${walk.date}, ${walk.duration}${walk.photos.length ? `, ${walk.photos.length} ${walk.photos.length === 1 ? "photo" : "photos"}` : ""}`}>
               <span class="walk-meta">
                 <time datetime={walk.date}>{new Date(walk.date).toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" })}</time>
                 <span>{String(index + 1).padStart(2, "0")}</span>
@@ -19,7 +19,19 @@ const walks = await loadWalks();
               <svg viewBox="0 0 64 64" aria-hidden="true">
                 <path d={walk.thumbnailPath} fill="none" stroke="black" stroke-width="2.2" vector-effect="non-scaling-stroke" stroke-linecap="round" stroke-linejoin="round" />
               </svg>
-              <span class="walk-duration">{walk.duration}</span>
+              <span class="walk-footer">
+                <span>{walk.duration}</span>
+                {walk.photos.length > 0 && (
+                  <span class="walk-photo-count">
+                    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+                      <rect x="1.5" y="2" width="13" height="12" rx="1" />
+                      <circle cx="5" cy="5.5" r="1" />
+                      <path d="m2 12 4-4 2.5 2.5L10 9l4 4" />
+                    </svg>
+                    {walk.photos.length}
+                  </span>
+                )}
+              </span>
             </a>
           </li>
         ))}
