@@ -31,7 +31,7 @@ const { walk } = Astro.props as { walk: Walk };
         <ol class="standings">
           {walk.standings.map((row) => (
             <li class={`prompt-${row.colorKey}`}>
-              <span>{row.by}</span>
+              <a href={`#photo-${row.bestPhotoIndex}`}>{row.by}</a>
               <span>{row.average}%</span>
             </li>
           ))}

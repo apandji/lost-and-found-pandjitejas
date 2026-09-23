@@ -6,7 +6,7 @@
     "dev": "astro dev",
     "build": "astro build",
     "sync:arena": "python3 scripts/sync_arena_photos.py",
-    "score:colors": "python3 scripts/score_photo_colors.py",
+    "score:colors": "sh -c 'test -x .venv/bin/python || python3 -m venv .venv && .venv/bin/pip install -q -r requirements.txt; .venv/bin/python scripts/score_photo_colors.py'",
     "import:photos": "python3 scripts/import_photos.py",
     "deploy": "bun run build && CLOUDFLARE_ACCOUNT_ID=899db3f6d2659dfb20376c7e752c862d wrangler pages deploy dist --project-name lost-and-found --branch main"
   },

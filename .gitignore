@@ -11,3 +11,4 @@ dist/
 !/public/routes/54278a147abb3ad1.scores.json
 /.inbox/
 __pycache__/
+.venv/

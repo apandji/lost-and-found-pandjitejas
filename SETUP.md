@@ -4,7 +4,7 @@ Two example routes are in Git: a path-only September 22 walk (`4432175ada5c8dac`
 The Sep 23 route and photo credits are at `public/routes/54278a147abb3ad1.json`.
 Other walks and all generated image files are local assets, not part of the student checkout.
 
-Install [Bun](https://bun.sh/) and [ImageMagick](https://imagemagick.org/) first. Then:
+Install [Bun](https://bun.sh/) and [ImageMagick](https://imagemagick.org/) first. Color scoring uses a local Python venv and [colorgram.py](https://pypi.org/project/colorgram.py/). Then:
 
 ```sh
 bun install
@@ -34,7 +34,7 @@ The separately supplied Lou photo is not on Are.na or in the ZIP; it will not ap
    ```
 
    Use that photo's actual ID and contributor. `timeSeconds` is optional: include it only when the original photo has a trustworthy capture time with a timezone. It is a Unix timestamp in seconds. Do not substitute the Are.na upload time; omitting it keeps the photo in the gallery without placing a misleading dot on the route.
-4. Run `bun run sync:arena` and `bun run score:colors`, then `bun run build`. Restart `bun run dev` if it was already running. Commit the route JSON change; generated images remain ignored by Git. Color percentages are written to `public/routes/54278a147abb3ad1.scores.json`.
+4. Run `bun run sync:arena` and `bun run score:colors`, then `bun run build`. Restart `bun run dev` if it was already running. Commit the route JSON change; generated images remain ignored by Git. `score:colors` writes top-5 hex palettes and percentages to `public/routes/54278a147abb3ad1.scores.json`.
 
 For photos received directly rather than through Are.na, keep originals in `.inbox/` and run:
 

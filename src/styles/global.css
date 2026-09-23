@@ -23,6 +23,7 @@ a { color: inherit; }
 .route { display: block; width: 100%; max-width: 600px; height: auto; border-radius: 12px; background: #f2f2f2; }
 .standings { list-style: none; margin: 0; padding: 0; font: 13px monospace; }
 .standings li { display: flex; justify-content: space-between; gap: 16px; padding: 3px 0; }
+.standings a { text-decoration: none; }
 .photo-score { margin-left: 8px; font: 13px monospace; }
 .prompt-yellow { color: #c4a000; }
 .prompt-red { color: #c23b3b; }

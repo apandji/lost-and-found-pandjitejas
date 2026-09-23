@@ -1,93 +1,99 @@
 #!/usr/bin/env python3
-"""Score walk photos by how much of each author's assigned color they contain."""
+"""Score walk photos from a colorgram palette (top colors + share)."""
 
 import json
-import shutil
-import subprocess
+import math
 from collections import defaultdict
 from pathlib import Path
+
+try:
+    import colorgram
+    from PIL import Image
+except ImportError:
+    raise SystemExit("Install scoring deps first: python3 -m venv .venv && .venv/bin/pip install -r requirements.txt")
 
 
 ROOT = Path(__file__).resolve().parents[1]
 ROUTES = ROOT / "public" / "routes"
 WALKS = ROOT / "public" / "walks"
-MAX_EDGE = 320
+MAX_EDGE = 400
+EXTRACT = 8
+STORE = 5
+MAX_DELTA_E = 22.0
 
-# HSV boxes. Hue is degrees (None = ignore hue). Saturation and value are 0–1.
-# Light / dark green share a hue and split on value, with a gap between them.
-# Black / white / silver ignore hue and sit in stacked low-saturation bands.
-COLORS = {
-    "yellow": {"h": [(38, 72)], "s": (0.28, 1.0), "v": (0.32, 1.0)},
-    "red": {"h": [(0, 14), (346, 360)], "s": (0.32, 1.0), "v": (0.18, 1.0)},
-    "blue": {"h": [(195, 255)], "s": (0.25, 1.0), "v": (0.18, 1.0)},
-    "light green": {"h": [(70, 160)], "s": (0.08, 1.0), "v": (0.50, 1.0)},
-    "dark green": {"h": [(80, 155)], "s": (0.10, 1.0), "v": (0.0, 0.55)},
-    "black": {"h": None, "s": (0.0, 0.30), "v": (0.0, 0.40)},
-    "white": {"h": None, "s": (0.0, 0.15), "v": (0.85, 1.0)},
-    "silver": {"h": None, "s": (0.0, 0.12), "v": (0.48, 0.78)},
+# Lab anchors for each assigned prompt. A swatch counts if its nearest
+# prompt is the author's color and ΔE is within MAX_DELTA_E.
+ANCHORS = {
+    "yellow": [(230, 190, 30), (212, 175, 55), (238, 210, 80)],
+    "red": [(194, 40, 40), (180, 30, 45), (120, 20, 25), (90, 15, 20)],
+    "blue": [(40, 90, 190), (70, 130, 200), (50, 80, 160)],
+    "light green": [(150, 200, 110), (180, 210, 140), (130, 170, 80)],
+    "dark green": [(30, 90, 45), (45, 80, 40), (31, 51, 30)],
+    "black": [(15, 15, 15), (40, 40, 40)],
+    "white": [(245, 245, 245), (230, 230, 228)],
+    "silver": [(168, 172, 178), (140, 144, 150)],
 }
 
 
-def rgb_to_hsv(r: int, g: int, b: int) -> tuple[float, float, float]:
-    r_, g_, b_ = r / 255.0, g / 255.0, b / 255.0
-    mx, mn = max(r_, g_, b_), min(r_, g_, b_)
-    delta = mx - mn
-    value = mx
-    saturation = 0.0 if mx == 0 else delta / mx
-    if delta == 0:
-        hue = 0.0
-    elif mx == r_:
-        hue = (60 * ((g_ - b_) / delta) + 360) % 360
-    elif mx == g_:
-        hue = 60 * ((b_ - r_) / delta) + 120
-    else:
-        hue = 60 * ((r_ - g_) / delta) + 240
-    return hue, saturation, value
+def srgb_to_linear(channel: float) -> float:
+    channel /= 255.0
+    return channel / 12.92 if channel <= 0.04045 else ((channel + 0.055) / 1.055) ** 2.4
 
 
-def in_range(value: float, bounds: tuple[float, float]) -> bool:
-    return bounds[0] <= value <= bounds[1]
+def rgb_to_lab(rgb: tuple[int, int, int]) -> tuple[float, float, float]:
+    r, g, b = (srgb_to_linear(channel) for channel in rgb)
+    x = r * 0.4124564 + g * 0.3575761 + b * 0.1804375
+    y = r * 0.2126729 + g * 0.7151522 + b * 0.0721750
+    z = r * 0.0193339 + g * 0.1191920 + b * 0.9503041
+
+    def pivot(value: float) -> float:
+        return value ** (1 / 3) if value > 0.008856 else (7.787 * value + 16 / 116)
+
+    fx, fy, fz = pivot(x / 0.95047), pivot(y), pivot(z / 1.08883)
+    return (116 * fy - 16, 500 * (fx - fy), 200 * (fy - fz))
 
 
-def pixel_matches(h: float, s: float, v: float, box: dict) -> bool:
-    if not in_range(s, box["s"]) or not in_range(v, box["v"]):
-        return False
-    hues = box["h"]
-    if hues is None:
-        return True
-    return any(start <= h <= end for start, end in hues)
+def delta_e(left: tuple[float, float, float], right: tuple[float, float, float]) -> float:
+    return math.sqrt(sum((a - b) ** 2 for a, b in zip(left, right)))
 
 
-def json_colors() -> dict:
-    packed = {}
-    for name, box in COLORS.items():
-        packed[name] = {
-            "h": None if box["h"] is None else [list(span) for span in box["h"]],
-            "s": list(box["s"]),
-            "v": list(box["v"]),
-        }
-    return packed
+ANCHOR_LAB = {name: [rgb_to_lab(rgb) for rgb in swatches] for name, swatches in ANCHORS.items()}
 
 
-def sample_pixels(path: Path) -> bytes:
-    raw = subprocess.run(
-        ["magick", str(path), "-auto-orient", "-resize", f"{MAX_EDGE}x{MAX_EDGE}>", "-depth", "8", "rgb:-"],
-        check=True,
-        capture_output=True,
-    )
-    if len(raw.stdout) % 3:
-        raise SystemExit(f"Pixel dump size mismatch for {path.name}: {len(raw.stdout)}")
-    return raw.stdout
+def nearest_prompt(rgb: tuple[int, int, int]) -> tuple[str, float]:
+    lab = rgb_to_lab(rgb)
+    best_name = ""
+    best_distance = math.inf
+    for name, anchors in ANCHOR_LAB.items():
+        distance = min(delta_e(lab, anchor) for anchor in anchors)
+        if distance < best_distance:
+            best_name, best_distance = name, distance
+    return best_name, best_distance
 
 
-def score_image(path: Path, box: dict) -> float:
-    pixels = sample_pixels(path)
-    matched = 0
-    count = len(pixels) // 3
-    for i in range(0, len(pixels), 3):
-        if pixel_matches(*rgb_to_hsv(pixels[i], pixels[i + 1], pixels[i + 2]), box):
-            matched += 1
-    return 100.0 * matched / count if count else 0.0
+def hex_color(rgb: tuple[int, int, int]) -> str:
+    return "#{:02x}{:02x}{:02x}".format(*rgb)
+
+
+def extract_palette(path: Path) -> list[dict]:
+    image = Image.open(path)
+    image.thumbnail((MAX_EDGE, MAX_EDGE))
+    colors = colorgram.extract(image, EXTRACT)
+    palette = []
+    for color in colors:
+        rgb = (color.rgb.r, color.rgb.g, color.rgb.b)
+        name, distance = nearest_prompt(rgb)
+        palette.append({
+            "hex": hex_color(rgb),
+            "pct": round(100.0 * color.proportion, 1),
+            "nearest": name,
+            "deltaE": round(distance, 1),
+        })
+    return palette
+
+
+def score_palette(palette: list[dict], assigned: str) -> float:
+    return round(sum(swatch["pct"] for swatch in palette if swatch["nearest"] == assigned and swatch["deltaE"] <= MAX_DELTA_E), 1)
 
 
 def color_label(value: str) -> str:
@@ -97,9 +103,8 @@ def color_label(value: str) -> str:
 def score_walk(route: Path) -> dict | None:
     data = json.loads(route.read_text())
     prompts = data.get("photoPrompts") or {}
-    walk_id = route.stem
-    photos_dir = WALKS / walk_id / "photos"
-    photos: dict[str, float] = {}
+    photos_dir = WALKS / route.stem / "photos"
+    photos: dict[str, dict] = {}
     totals: dict[str, list[float]] = defaultdict(list)
 
     for photo in data.get("photos") or []:
@@ -108,13 +113,16 @@ def score_walk(route: Path) -> dict | None:
         prompt = prompts.get(name) if name else None
         if not file or not prompt or prompt.get("type") != "color":
             continue
-        value = prompt.get("value")
-        box = COLORS.get(value)
+        assigned = prompt.get("value")
         source = photos_dir / file
-        if box is None or not source.exists():
+        if assigned not in ANCHORS or not source.exists():
             continue
-        percent = round(score_image(source, box), 1)
-        photos[file] = percent
+        palette = extract_palette(source)
+        percent = score_palette(palette, assigned)
+        photos[file] = {
+            "pct": percent,
+            "palette": [{"hex": swatch["hex"], "pct": swatch["pct"]} for swatch in palette[:STORE]],
+        }
         totals[name].append(percent)
 
     if not photos:
@@ -128,12 +136,15 @@ def score_walk(route: Path) -> dict | None:
         }
         for name, scores in totals.items()
     }
-    return {"photos": photos, "people": people, "colors": json_colors()}
+    return {
+        "engine": "colorgram",
+        "photos": photos,
+        "people": people,
+        "anchors": {name: [hex_color(rgb) for rgb in swatches] for name, swatches in ANCHORS.items()},
+    }
 
 
 def main() -> None:
-    if not shutil.which("magick"):
-        raise SystemExit("ImageMagick is required (install it, then rerun this command)")
     routes = sorted(path for path in ROUTES.glob("*.json") if path.name.count(".") == 1)
     if not routes:
         raise SystemExit("No walk route files found")

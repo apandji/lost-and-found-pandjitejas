@@ -16,6 +16,7 @@ export interface WalkStanding {
   by: string;
   average: number;
   colorKey: string;
+  bestPhotoIndex: number;
 }
 
 export interface Walk {
@@ -38,8 +39,18 @@ interface WalkData {
   photoPrompts?: Record<string, { type: string; value: string }>;
 }
 
+interface WalkScoreEntry {
+  pct?: number;
+  palette?: Array<{ hex: string; pct: number }>;
+}
+
 interface WalkScores {
-  photos?: Record<string, number>;
+  photos?: Record<string, number | WalkScoreEntry>;
+}
+
+function scoreValue(raw: number | WalkScoreEntry | undefined): number | undefined {
+  if (raw === undefined) return undefined;
+  return typeof raw === "number" ? raw : raw.pct;
 }
 
 const walksRoot = join(process.cwd(), "public", "routes");
@@ -71,16 +82,20 @@ async function loadScores(id: string): Promise<WalkScores["photos"]> {
 }
 
 function standingsFor(photos: WalkPhoto[]): WalkStanding[] {
-  const totals = new Map<string, { sum: number; count: number; colorKey: string }>();
-  for (const photo of photos) {
-    if (!photo.by || photo.colorPct === null || !photo.colorKey) continue;
-    const current = totals.get(photo.by) ?? { sum: 0, count: 0, colorKey: photo.colorKey };
+  const totals = new Map<string, { sum: number; count: number; colorKey: string; bestIndex: number; bestPct: number }>();
+  photos.forEach((photo, index) => {
+    if (!photo.by || photo.colorPct === null || !photo.colorKey) return;
+    const current = totals.get(photo.by) ?? { sum: 0, count: 0, colorKey: photo.colorKey, bestIndex: index, bestPct: photo.colorPct };
     current.sum += photo.colorPct;
     current.count += 1;
+    if (photo.colorPct > current.bestPct) {
+      current.bestPct = photo.colorPct;
+      current.bestIndex = index;
+    }
     totals.set(photo.by, current);
-  }
+  });
   return [...totals.entries()]
-    .map(([by, { sum, count, colorKey }]) => ({ by, average: Math.round(sum / count), colorKey }))
+    .map(([by, { sum, count, colorKey, bestIndex }]) => ({ by, average: Math.round(sum / count), colorKey, bestPhotoIndex: bestIndex }))
     .sort((a, b) => b.average - a.average || a.by.localeCompare(b.by));
 }
 
@@ -99,7 +114,7 @@ export async function loadWalks(): Promise<Walk[]> {
       const thumbnailSrc = `/walks/${id}/thumbs/${encodeURIComponent(photo.file)}`;
       const prompt = photo.by ? prompts[photo.by] : undefined;
       const promptColor = prompt?.type === "color" ? prompt.value : undefined;
-      const raw = promptColor !== undefined ? scores[photo.file] : undefined;
+      const raw = promptColor !== undefined ? scoreValue(scores[photo.file]) : undefined;
       const scored = raw !== undefined;
       return {
         src,
