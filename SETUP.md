@@ -9,6 +9,7 @@ Install [Bun](https://bun.sh/) and [ImageMagick](https://imagemagick.org/) first
 ```sh
 bun install
 bun run sync:arena
+bun run score:colors
 bun run dev
 ```
 
@@ -33,7 +34,7 @@ The separately supplied Lou photo is not on Are.na or in the ZIP; it will not ap
    ```
 
    Use that photo's actual ID and contributor. `timeSeconds` is optional: include it only when the original photo has a trustworthy capture time with a timezone. It is a Unix timestamp in seconds. Do not substitute the Are.na upload time; omitting it keeps the photo in the gallery without placing a misleading dot on the route.
-4. Run `bun run sync:arena`, then `bun run build`. Restart `bun run dev` if it was already running. Commit the route JSON change; generated images remain ignored by Git.
+4. Run `bun run sync:arena` and `bun run score:colors`, then `bun run build`. Restart `bun run dev` if it was already running. Commit the route JSON change; generated images remain ignored by Git. Color percentages are written to `public/routes/54278a147abb3ad1.scores.json`.
 
 For photos received directly rather than through Are.na, keep originals in `.inbox/` and run:
 

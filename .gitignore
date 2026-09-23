@@ -8,5 +8,6 @@ dist/
 /public/routes/*
 !/public/routes/4432175ada5c8dac.json
 !/public/routes/54278a147abb3ad1.json
+!/public/routes/54278a147abb3ad1.scores.json
 /.inbox/
 __pycache__/
