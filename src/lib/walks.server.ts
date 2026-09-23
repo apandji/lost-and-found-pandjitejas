@@ -27,7 +27,7 @@ interface WalkData {
   photos: Array<{ file: string; timeSeconds?: number; by?: string }>;
 }
 
-const walksRoot = join(process.cwd(), "src", "data", "walks");
+const walksRoot = join(process.cwd(), "public", "routes");
 
 function markerAtTime(timeline: WalkData["timeline"], timeSeconds?: number): [number, number] | null {
   if (timeSeconds === undefined || !Number.isFinite(timeSeconds)) return null;
@@ -41,7 +41,7 @@ function markerAtTime(timeline: WalkData["timeline"], timeSeconds?: number): [nu
 }
 
 export async function loadWalks(): Promise<Walk[]> {
-  const files = (await readdir(walksRoot)).filter((file) => /^[a-f0-9]{16}\.json$/.test(file));
+  const files = (existsSync(walksRoot) ? await readdir(walksRoot) : []).filter((file) => /^[a-f0-9]{16}\.json$/.test(file));
   const walks = await Promise.all(files.map(async (file) => {
     const id = file.slice(0, -5);
     const data = JSON.parse(await readFile(join(walksRoot, file), "utf8")) as WalkData;
